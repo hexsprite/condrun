@@ -1,5 +1,9 @@
 # condrun
 
+[![CI](https://github.com/hexsprite/condrun/actions/workflows/ci.yml/badge.svg)](https://github.com/hexsprite/condrun/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/condrun.svg)](https://crates.io/crates/condrun)
+[![license](https://img.shields.io/crates/l/condrun.svg)](#license)
+
 **Conditional command runner.** Don't burn metered bandwidth on backups.
 
 `condrun` gates command execution on live system-state predicates and kills the child process if those predicates flip mid-run. Wrap a `restic`/`rsync`/`borg`/`duplicacy` cron job with `condrun` and stop worrying about the 2am backup chewing through your phone tether.
@@ -141,4 +145,10 @@ cargo clippy --all-features --all-targets -- -D warnings
 
 ## License
 
-MIT OR Apache-2.0 — pick whichever fits your project.
+Licensed under either of [Apache License 2.0](LICENSE-APACHE) or
+[MIT license](LICENSE-MIT) at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally
+submitted for inclusion in this crate by you, as defined in the Apache-2.0
+license, shall be dual licensed as above, without any additional terms or
+conditions.

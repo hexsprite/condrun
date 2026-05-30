@@ -7,6 +7,7 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/hexsprite/condrun"
 keywords = ["cli", "supervisor", "network", "wifi", "predicate"]
 categories = ["command-line-utilities"]
+exclude = ["AGENTS.md", "CLAUDE.md", ".claude", ".github", "docs"]
 
 [lib]
 name = "condrun"

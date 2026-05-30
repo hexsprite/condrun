@@ -94,8 +94,8 @@ impl FixtureNetworkState {
     ///
     /// Returns `Err` with a descriptive message on malformed JSON.
     pub fn load_from_str(s: &str) -> Result<Self> {
-        let fixture: StateFixture = serde_json::from_str(s)
-            .context("failed to parse state fixture JSON")?;
+        let fixture: StateFixture =
+            serde_json::from_str(s).context("failed to parse state fixture JSON")?;
         Ok(Self::new(fixture))
     }
 
@@ -104,12 +104,10 @@ impl FixtureNetworkState {
     /// Returns `Err` with a descriptive message if the file is missing,
     /// unreadable, or contains malformed JSON.
     pub fn load_from_path(path: &Path) -> Result<Self> {
-        let contents = std::fs::read_to_string(path).with_context(|| {
-            format!("failed to read state fixture file: {}", path.display())
-        })?;
-        let fixture: StateFixture = serde_json::from_str(&contents).with_context(|| {
-            format!("failed to parse state fixture JSON at {}", path.display())
-        })?;
+        let contents = std::fs::read_to_string(path)
+            .with_context(|| format!("failed to read state fixture file: {}", path.display()))?;
+        let fixture: StateFixture = serde_json::from_str(&contents)
+            .with_context(|| format!("failed to parse state fixture JSON at {}", path.display()))?;
         Ok(Self::new(fixture))
     }
 }
@@ -172,10 +170,7 @@ mod tests {
         let json = r#"{ "expensive": true, "low_data": false }"#;
         let state = FixtureNetworkState::load_from_str(json).expect("valid JSON");
         assert!(state.is_expensive().await, "expensive should be true");
-        assert!(
-            !state.is_low_data_mode().await,
-            "low_data should be false"
-        );
+        assert!(!state.is_low_data_mode().await, "low_data should be false");
     }
 
     #[tokio::test(start_paused = true)]
@@ -237,8 +232,8 @@ mod tests {
     #[tokio::test]
     async fn nonexistent_path_returns_error() {
         let path = PathBuf::from("/definitely/does/not/exist/condrun-fixture.json");
-        let err = FixtureNetworkState::load_from_path(&path)
-            .expect_err("nonexistent file should error");
+        let err =
+            FixtureNetworkState::load_from_path(&path).expect_err("nonexistent file should error");
         let msg = format!("{err:#}");
         assert!(
             msg.contains("state fixture file") || msg.contains("definitely"),

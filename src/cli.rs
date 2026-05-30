@@ -118,7 +118,10 @@ fn parse_duration(s: &str) -> std::result::Result<Duration, String> {
     }
     let bytes = s.as_bytes();
     // Find the index where the suffix begins (first non-digit).
-    let split = bytes.iter().position(|b| !b.is_ascii_digit()).unwrap_or(bytes.len());
+    let split = bytes
+        .iter()
+        .position(|b| !b.is_ascii_digit())
+        .unwrap_or(bytes.len());
     if split == 0 {
         return Err(format!("missing numeric prefix in duration: {s}"));
     }
@@ -128,8 +131,12 @@ fn parse_duration(s: &str) -> std::result::Result<Duration, String> {
         .map_err(|e| format!("invalid duration number {num_str:?}: {e}"))?;
     let secs = match unit {
         "" | "s" => n,
-        "m" => n.checked_mul(60).ok_or_else(|| format!("duration overflow: {s}"))?,
-        "h" => n.checked_mul(3600).ok_or_else(|| format!("duration overflow: {s}"))?,
+        "m" => n
+            .checked_mul(60)
+            .ok_or_else(|| format!("duration overflow: {s}"))?,
+        "h" => n
+            .checked_mul(3600)
+            .ok_or_else(|| format!("duration overflow: {s}"))?,
         other => {
             return Err(format!(
                 "invalid duration unit {other:?} (expected s, m, or h)"
@@ -175,8 +182,8 @@ fn build_network_state(_cli: &Cli) -> Result<Box<dyn NetworkState>> {
 
 #[cfg(target_os = "macos")]
 fn real_network_state() -> Result<Box<dyn NetworkState>> {
-    let s = crate::state::macos::MacOsNetworkState::new()
-        .context("failed to start NWPathMonitor")?;
+    let s =
+        crate::state::macos::MacOsNetworkState::new().context("failed to start NWPathMonitor")?;
     Ok(Box::new(s))
 }
 
@@ -220,9 +227,8 @@ pub async fn dispatch(cli: Cli) -> Result<i32> {
 
             let state = build_network_state(&cli)?;
             let spawner: Box<dyn Spawner> = Box::new(TokioSpawner);
-            let signals: Box<dyn Signals> = Box::new(
-                RealSignals::new().context("failed to install SIGINT/SIGTERM handlers")?,
-            );
+            let signals: Box<dyn Signals> =
+                Box::new(RealSignals::new().context("failed to install SIGINT/SIGTERM handlers")?);
 
             let config = SupervisorConfig {
                 strict: cli.strict,
@@ -362,19 +368,15 @@ mod tests {
 
     #[test]
     fn cli_grace_45s() {
-        let cli = Cli::try_parse_from([
-            "condrun", "--grace", "45s", "run", "--", "echo", "hi",
-        ])
-        .unwrap();
+        let cli =
+            Cli::try_parse_from(["condrun", "--grace", "45s", "run", "--", "echo", "hi"]).unwrap();
         assert_eq!(cli.grace, Duration::from_secs(45));
     }
 
     #[test]
     fn cli_grace_2m() {
-        let cli = Cli::try_parse_from([
-            "condrun", "--grace", "2m", "run", "--", "echo", "hi",
-        ])
-        .unwrap();
+        let cli =
+            Cli::try_parse_from(["condrun", "--grace", "2m", "run", "--", "echo", "hi"]).unwrap();
         assert_eq!(cli.grace, Duration::from_secs(120));
     }
 
@@ -398,10 +400,8 @@ mod tests {
     fn cli_inner_command_flags_after_dashdash() {
         // `condrun run -- mycmd --some-flag arg` — inner command's own flags
         // must not collide with condrun's parser.
-        let cli = Cli::try_parse_from([
-            "condrun", "run", "--", "mycmd", "--inner-flag", "x",
-        ])
-        .unwrap();
+        let cli =
+            Cli::try_parse_from(["condrun", "run", "--", "mycmd", "--inner-flag", "x"]).unwrap();
         match cli.command {
             Command::Run { cmd } => {
                 assert_eq!(cmd, vec!["mycmd", "--inner-flag", "x"]);
@@ -412,28 +412,17 @@ mod tests {
 
     #[test]
     fn cli_no_kill_on_change_flag() {
-        let cli = Cli::try_parse_from([
-            "condrun",
-            "--no-kill-on-change",
-            "run",
-            "--",
-            "echo",
-            "hi",
-        ])
-        .unwrap();
+        let cli =
+            Cli::try_parse_from(["condrun", "--no-kill-on-change", "run", "--", "echo", "hi"])
+                .unwrap();
         assert!(cli.no_kill_on_change);
     }
 
     #[cfg(feature = "test-fixture")]
     #[test]
     fn cli_state_source_parses_when_feature_enabled() {
-        let cli = Cli::try_parse_from([
-            "condrun",
-            "--state-source",
-            "file:/tmp/x.json",
-            "check",
-        ])
-        .unwrap();
+        let cli = Cli::try_parse_from(["condrun", "--state-source", "file:/tmp/x.json", "check"])
+            .unwrap();
         assert_eq!(cli.state_source.as_deref(), Some("file:/tmp/x.json"));
     }
 }

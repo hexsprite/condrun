@@ -30,22 +30,34 @@ impl FakeNetworkState {
     }
 
     pub fn set_expensive(&self, value: bool) {
-        self.inner.lock().expect("FakeNetworkState mutex poisoned").expensive = value;
+        self.inner
+            .lock()
+            .expect("FakeNetworkState mutex poisoned")
+            .expensive = value;
     }
 
     pub fn set_low_data(&self, value: bool) {
-        self.inner.lock().expect("FakeNetworkState mutex poisoned").low_data = value;
+        self.inner
+            .lock()
+            .expect("FakeNetworkState mutex poisoned")
+            .low_data = value;
     }
 }
 
 #[async_trait]
 impl NetworkState for FakeNetworkState {
     async fn is_expensive(&self) -> bool {
-        self.inner.lock().expect("FakeNetworkState mutex poisoned").expensive
+        self.inner
+            .lock()
+            .expect("FakeNetworkState mutex poisoned")
+            .expensive
     }
 
     async fn is_low_data_mode(&self) -> bool {
-        self.inner.lock().expect("FakeNetworkState mutex poisoned").low_data
+        self.inner
+            .lock()
+            .expect("FakeNetworkState mutex poisoned")
+            .low_data
     }
 }
 

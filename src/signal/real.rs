@@ -9,7 +9,9 @@
 //! the type that flows through condrun's API.
 
 use async_trait::async_trait;
-use tokio::signal::unix::{Signal as TokioSignal, SignalKind as TokioSignalKind, signal as tokio_signal};
+use tokio::signal::unix::{
+    Signal as TokioSignal, SignalKind as TokioSignalKind, signal as tokio_signal,
+};
 
 use crate::signal::{SignalKind, Signals};
 
@@ -36,7 +38,12 @@ impl RealSignals {
         let term = tokio_signal(TokioSignalKind::terminate())?;
         let quit = tokio_signal(TokioSignalKind::quit())?;
         let hup = tokio_signal(TokioSignalKind::hangup())?;
-        Ok(Self { int, term, quit, hup })
+        Ok(Self {
+            int,
+            term,
+            quit,
+            hup,
+        })
     }
 }
 

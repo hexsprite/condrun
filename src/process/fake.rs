@@ -9,9 +9,9 @@
 //!   * forced kill — `terminate_delay > grace`, after grace expires `killed = true` and `wait()` resolves
 //!   * raw signal forwarding via `signal()` — only records `last_signal`, no escalation
 
-use std::process::ExitStatus;
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
+use std::process::ExitStatus;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -128,15 +128,24 @@ impl FakeChildHandle {
     }
 
     pub fn terminated(&self) -> bool {
-        self.state.lock().expect("FakeChildHandle mutex poisoned").terminated
+        self.state
+            .lock()
+            .expect("FakeChildHandle mutex poisoned")
+            .terminated
     }
 
     pub fn killed(&self) -> bool {
-        self.state.lock().expect("FakeChildHandle mutex poisoned").killed
+        self.state
+            .lock()
+            .expect("FakeChildHandle mutex poisoned")
+            .killed
     }
 
     pub fn last_signal(&self) -> Option<SignalKind> {
-        self.state.lock().expect("FakeChildHandle mutex poisoned").last_signal
+        self.state
+            .lock()
+            .expect("FakeChildHandle mutex poisoned")
+            .last_signal
     }
 
     fn mark_exited(&self) {
@@ -147,7 +156,10 @@ impl FakeChildHandle {
     }
 
     fn snapshot_exit_code(&self) -> i32 {
-        self.state.lock().expect("FakeChildHandle mutex poisoned").exit_code
+        self.state
+            .lock()
+            .expect("FakeChildHandle mutex poisoned")
+            .exit_code
     }
 }
 
@@ -167,7 +179,12 @@ fn make_status(code: i32) -> ExitStatus {
 impl ChildHandle for FakeChildHandle {
     async fn wait(&mut self) -> ExitStatus {
         // Fast path: already exited (e.g., after terminate()).
-        if self.state.lock().expect("FakeChildHandle mutex poisoned").exited {
+        if self
+            .state
+            .lock()
+            .expect("FakeChildHandle mutex poisoned")
+            .exited
+        {
             return make_status(self.snapshot_exit_code());
         }
 
@@ -249,8 +266,14 @@ mod tests {
     #[tokio::test(start_paused = true)]
     async fn spawn_records_multiple_in_order() {
         let spawner = FakeSpawner::new();
-        let a = CommandSpec { program: "a".into(), args: vec![] };
-        let b = CommandSpec { program: "b".into(), args: vec!["x".into()] };
+        let a = CommandSpec {
+            program: "a".into(),
+            args: vec![],
+        };
+        let b = CommandSpec {
+            program: "b".into(),
+            args: vec!["x".into()],
+        };
         let _ = spawner.spawn(&a).await.unwrap();
         let _ = spawner.spawn(&b).await.unwrap();
         let recorded = spawner.spawned();
@@ -273,8 +296,8 @@ mod tests {
 
     #[tokio::test(start_paused = true)]
     async fn terminate_marks_terminated_and_resolves_wait_when_graceful() {
-        let mut h = FakeChildHandle::new(0, Duration::from_secs(60))
-            .with_terminate_delay(Duration::ZERO);
+        let mut h =
+            FakeChildHandle::new(0, Duration::from_secs(60)).with_terminate_delay(Duration::ZERO);
         assert!(!h.terminated());
 
         h.terminate(Duration::from_secs(5)).await.unwrap();
@@ -326,7 +349,10 @@ mod tests {
         let spawner = FakeSpawner::new();
         spawner.enqueue_handle(FakeChildHandle::new(7, Duration::from_millis(100)));
 
-        let cmd = CommandSpec { program: "x".into(), args: vec![] };
+        let cmd = CommandSpec {
+            program: "x".into(),
+            args: vec![],
+        };
         let mut handle = spawner.spawn(&cmd).await.unwrap();
         let status = handle.wait().await;
         assert_eq!(exit_code_of(status), Some(7));
@@ -341,7 +367,10 @@ mod tests {
 
         let spawner = Arc::new(FakeSpawner::new());
         let s2 = spawner.clone();
-        let cmd = CommandSpec { program: "p".into(), args: vec![] };
+        let cmd = CommandSpec {
+            program: "p".into(),
+            args: vec![],
+        };
         tokio::spawn(async move {
             let _ = s2.spawn(&cmd).await.unwrap();
         })

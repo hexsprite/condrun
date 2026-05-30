@@ -3,9 +3,10 @@
 //! Wave 4 lays the foundation: evaluate the predicate set against current
 //! [`NetworkState`] before spawning, then either short-circuit (predicates
 //! fail) or hand off to the [`Spawner`] and wait for the child. Wave 5 will
-//! extend the wait with a watcher loop (kill-on-change), Wave 6 with debounce
-//! + SIGINT/SIGTERM forwarding. The struct + `run()` signature defined here
-//! is FROZEN — later waves extend behaviour without changing the public API.
+//! extend the wait with a watcher loop (kill-on-change), Wave 6 with
+//! debounce and SIGINT/SIGTERM forwarding. The struct + `run()` signature
+//! defined here is FROZEN — later waves extend behaviour without changing
+//! the public API.
 //!
 //! Exit-code mapping (per SPEC §8.3):
 //!   * pre-flight pass + child exits 0 → return 0
@@ -273,8 +274,8 @@ mod tests {
     use crate::predicate::metered::RejectExpensive;
     use crate::process::fake::{FakeChildHandle, FakeSpawner};
     use crate::process::{ChildHandle, CommandSpec, Spawner};
-    use crate::signal::fake::FakeSignals;
     use crate::signal::SignalKind;
+    use crate::signal::fake::FakeSignals;
     use crate::state::fake::FakeNetworkState;
 
     // --------------------------------------------------------------------
@@ -415,14 +416,21 @@ mod tests {
 
     impl OneShotSpawner {
         fn new(handle: InspectableHandle) -> Self {
-            Self { handle: Mutex::new(Some(handle)) }
+            Self {
+                handle: Mutex::new(Some(handle)),
+            }
         }
     }
 
     #[async_trait]
     impl Spawner for OneShotSpawner {
         async fn spawn(&self, _cmd: &CommandSpec) -> Result<Box<dyn ChildHandle>> {
-            let h = self.handle.lock().unwrap().take().expect("OneShotSpawner already consumed");
+            let h = self
+                .handle
+                .lock()
+                .unwrap()
+                .take()
+                .expect("OneShotSpawner already consumed");
             Ok(Box::new(h))
         }
     }
@@ -440,10 +448,7 @@ mod tests {
         fn name(&self) -> &str {
             "counting-reject-expensive"
         }
-        async fn evaluate(
-            &self,
-            state: &dyn crate::state::NetworkState,
-        ) -> PredicateResult {
+        async fn evaluate(&self, state: &dyn crate::state::NetworkState) -> PredicateResult {
             self.counter.fetch_add(1, Ordering::SeqCst);
             RejectExpensive.evaluate(state).await
         }
@@ -709,8 +714,7 @@ mod tests {
 
         // Child runs for a virtual minute; predicate flip should kill it long
         // before that.
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(60));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(60));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let supervisor = Supervisor {
@@ -726,15 +730,24 @@ mod tests {
 
         // First poll fires at t=2s; predicates still pass.
         tokio::time::sleep(Duration::from_secs(3)).await;
-        assert!(!inspector.terminated(), "child must not be killed before flip");
+        assert!(
+            !inspector.terminated(),
+            "child must not be killed before flip"
+        );
 
         // Flip state — next poll (t≈4s) should see Fail and terminate.
         state_writer.set_expensive(true);
 
         let code = run.await.unwrap();
         assert_eq!(code, 3, "predicate flip → exit code 3");
-        assert!(inspector.terminated(), "child.terminate() must have been called");
-        assert!(!inspector.killed(), "graceful terminate must NOT escalate to SIGKILL");
+        assert!(
+            inspector.terminated(),
+            "child.terminate() must have been called"
+        );
+        assert!(
+            !inspector.killed(),
+            "graceful terminate must NOT escalate to SIGKILL"
+        );
     }
 
     /// Scenario 6: child ignores SIGTERM longer than grace → SIGKILL → return 3.
@@ -770,7 +783,10 @@ mod tests {
 
         let code = run.await.unwrap();
         assert_eq!(code, 3);
-        assert!(inspector.terminated(), "terminate() must always set terminated");
+        assert!(
+            inspector.terminated(),
+            "terminate() must always set terminated"
+        );
         assert!(
             inspector.killed(),
             "exceeding grace must escalate to SIGKILL (killed=true)"
@@ -786,8 +802,7 @@ mod tests {
         let predicates = PredicateSet::and(vec![Box::new(RejectExpensive)]);
 
         // Child exits at t=2s; first poll wouldn't fire until t=5s.
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(2));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(2));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let supervisor = Supervisor {
@@ -800,7 +815,10 @@ mod tests {
 
         let code = supervisor.run(&echo_cmd()).await.unwrap();
         assert_eq!(code, 0, "natural success exit must propagate as 0");
-        assert!(!inspector.terminated(), "supervisor must not terminate a healthy child");
+        assert!(
+            !inspector.terminated(),
+            "supervisor must not terminate a healthy child"
+        );
         assert!(!inspector.killed());
     }
 
@@ -819,8 +837,7 @@ mod tests {
         let preflight_count = 1; // run() always evaluates once before spawn.
 
         // Child outlives the test window so only the watcher loop drives counts.
-        let (handle, _inspector) =
-            InspectableHandle::new(0, Duration::from_secs(600));
+        let (handle, _inspector) = InspectableHandle::new(0, Duration::from_secs(600));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let supervisor = Supervisor {
@@ -878,8 +895,7 @@ mod tests {
 
         let predicates = PredicateSet::and(vec![Box::new(RejectExpensive)]);
 
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(600));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(600));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let supervisor = Supervisor {
@@ -914,8 +930,7 @@ mod tests {
 
         let predicates = PredicateSet::and(vec![Box::new(RejectExpensive)]);
 
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(600));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(600));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let supervisor = Supervisor {
@@ -959,8 +974,7 @@ mod tests {
 
         let predicates = PredicateSet::and(vec![Box::new(RejectExpensive)]);
 
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(600));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(600));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let supervisor = Supervisor {
@@ -1005,8 +1019,7 @@ mod tests {
 
         let predicates = PredicateSet::and(vec![Box::new(RejectExpensive)]);
 
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(600));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(600));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let supervisor = Supervisor {
@@ -1066,8 +1079,7 @@ mod tests {
         let predicates = PredicateSet::and(vec![Box::new(RejectExpensive)]);
 
         // Child takes 60s of virtual time to exit; will exit cleanly with 0.
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(60));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(60));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let signals = FakeSignals::new();
@@ -1097,8 +1109,14 @@ mod tests {
             "SIGINT must be forwarded to child"
         );
         assert_eq!(code, 0, "child exited 0 → supervisor returns 0");
-        assert!(!inspector.terminated(), "signal-forwarding path must NOT call terminate()");
-        assert!(!inspector.killed(), "signal-forwarding path must NOT escalate to SIGKILL");
+        assert!(
+            !inspector.terminated(),
+            "signal-forwarding path must NOT call terminate()"
+        );
+        assert!(
+            !inspector.killed(),
+            "signal-forwarding path must NOT escalate to SIGKILL"
+        );
     }
 
     /// SIGTERM forwarded to running child. Acceptance #2.
@@ -1110,8 +1128,7 @@ mod tests {
         let predicates = PredicateSet::and(vec![Box::new(RejectExpensive)]);
 
         // Child exits with non-zero → supervisor must map to 2.
-        let (handle, inspector) =
-            InspectableHandle::new(7, Duration::from_secs(60));
+        let (handle, inspector) = InspectableHandle::new(7, Duration::from_secs(60));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let signals = FakeSignals::new();
@@ -1139,7 +1156,10 @@ mod tests {
             "SIGTERM must be forwarded to child"
         );
         assert_eq!(code, 2, "child exited 7 → supervisor maps to 2");
-        assert!(!inspector.terminated(), "raw forward must not invoke terminate()");
+        assert!(
+            !inspector.terminated(),
+            "raw forward must not invoke terminate()"
+        );
     }
 
     // ------------------------------------------------------------------
@@ -1158,10 +1178,7 @@ mod tests {
         fn name(&self) -> &str {
             "slow-pass"
         }
-        async fn evaluate(
-            &self,
-            _state: &dyn crate::state::NetworkState,
-        ) -> PredicateResult {
+        async fn evaluate(&self, _state: &dyn crate::state::NetworkState) -> PredicateResult {
             tokio::time::sleep(self.delay).await;
             PredicateResult::Pass
         }
@@ -1214,8 +1231,7 @@ mod tests {
 
         // Child takes a virtual hour to exit on its own. Without escalation,
         // a single forwarded signal would block the supervisor for that long.
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(3600));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(3600));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
         let signals = FakeSignals::new();
@@ -1264,8 +1280,7 @@ mod tests {
 
             let predicates = PredicateSet::and(vec![Box::new(RejectExpensive)]);
 
-            let (handle, inspector) =
-                InspectableHandle::new(0, Duration::from_secs(60));
+            let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(60));
             let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 
             let signals = FakeSignals::new();
@@ -1308,8 +1323,7 @@ mod tests {
         // Configure terminate_delay > grace — IF terminate() were called
         // the child would be SIGKILLed. We assert that never happens.
         let grace = Duration::from_secs(2);
-        let (handle, inspector) =
-            InspectableHandle::new(0, Duration::from_secs(30));
+        let (handle, inspector) = InspectableHandle::new(0, Duration::from_secs(30));
         let handle = handle.with_terminate_delay(grace + Duration::from_secs(1));
         let spawner: Box<dyn Spawner> = Box::new(OneShotSpawner::new(handle));
 

@@ -101,7 +101,10 @@ mod tests {
 
         // Advance virtual time without injecting — the waiter must remain pending.
         tokio::time::advance(Duration::from_secs(60)).await;
-        assert!(!waiter.is_finished(), "next() should block while queue is empty");
+        assert!(
+            !waiter.is_finished(),
+            "next() should block while queue is empty"
+        );
 
         // Inject and the waiter resolves with the injected kind.
         injector.inject(SignalKind::Terminate);

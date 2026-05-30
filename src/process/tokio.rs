@@ -1,7 +1,7 @@
 use std::process::{ExitStatus, Stdio};
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use async_trait::async_trait;
 
 use crate::process::{ChildHandle, CommandSpec, Spawner};
@@ -216,7 +216,10 @@ mod tests {
     #[tokio::test]
     async fn exit_code_propagation() {
         let spawner = TokioSpawner;
-        let mut child = spawner.spawn(&spec("sh", &["-c", "exit 42"])).await.unwrap();
+        let mut child = spawner
+            .spawn(&spec("sh", &["-c", "exit 42"]))
+            .await
+            .unwrap();
         let status = child.wait().await;
         assert_eq!(status.code(), Some(42), "should propagate exit 42");
     }

@@ -36,7 +36,10 @@ pub struct PredicateSet {
 
 impl PredicateSet {
     pub fn new(predicates: Vec<Box<dyn Predicate>>, composition: Composition) -> Self {
-        Self { predicates, composition }
+        Self {
+            predicates,
+            composition,
+        }
     }
 
     pub fn and(predicates: Vec<Box<dyn Predicate>>) -> Self {
@@ -63,7 +66,9 @@ impl PredicateSet {
             }
             Composition::Or => {
                 if self.predicates.is_empty() {
-                    return PredicateResult::Fail { reason: "no predicates".into() };
+                    return PredicateResult::Fail {
+                        reason: "no predicates".into(),
+                    };
                 }
                 let mut reasons = Vec::new();
                 for p in &self.predicates {
@@ -72,7 +77,9 @@ impl PredicateSet {
                         PredicateResult::Fail { reason } => reasons.push(reason),
                     }
                 }
-                PredicateResult::Fail { reason: reasons.join("; ") }
+                PredicateResult::Fail {
+                    reason: reasons.join("; "),
+                }
             }
         }
     }
@@ -105,7 +112,9 @@ mod tests {
             "always-fail"
         }
         async fn evaluate(&self, _state: &dyn NetworkState) -> PredicateResult {
-            PredicateResult::Fail { reason: self.0.to_string() }
+            PredicateResult::Fail {
+                reason: self.0.to_string(),
+            }
         }
     }
 
@@ -150,7 +159,9 @@ mod tests {
         ]);
         assert_eq!(
             set.evaluate(&state).await,
-            PredicateResult::Fail { reason: "x".to_string() }
+            PredicateResult::Fail {
+                reason: "x".to_string()
+            }
         );
         assert_eq!(counter.load(Ordering::SeqCst), 0);
     }

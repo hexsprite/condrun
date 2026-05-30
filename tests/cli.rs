@@ -37,8 +37,7 @@ fn write_fixture(json: &str) -> NamedTempFile {
 /// Convenience: build a `Command` for the condrun binary. Fails loudly with a
 /// hint if the binary wasn't built with `--features test-fixture`.
 fn condrun() -> Command {
-    Command::cargo_bin("condrun")
-        .expect("condrun binary — build with `--features test-fixture`")
+    Command::cargo_bin("condrun").expect("condrun binary — build with `--features test-fixture`")
 }
 
 /// Build a `file:<path>` URL for the `--state-source` flag.
@@ -229,9 +228,7 @@ fn and_composition_low_data_fails() {
         ])
         .assert()
         .code(1)
-        .stderr(
-            predicate::str::contains("low_data").or(predicate::str::contains("Low Data Mode")),
-        );
+        .stderr(predicate::str::contains("low_data").or(predicate::str::contains("Low Data Mode")));
 }
 
 #[test]

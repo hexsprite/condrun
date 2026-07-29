@@ -117,7 +117,7 @@ version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c132eebf10f5cad5289222520a4a058514204aed6d791f1cf4fe8088b82d15f"
 dependencies = [
- "objc2",
+ "objc2 0.5.2",
 ]
 
 [[package]]
@@ -206,7 +206,7 @@ dependencies = [
  "clap",
  "futures",
  "nix",
- "objc2",
+ "objc2 0.6.4",
  "objc2-foundation",
  "plist",
  "predicates",
@@ -547,6 +547,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a12a8ed07aefc768292f076dc3ac8c48f3781c8f2d5851dd3d98950e8c5a89f"
+dependencies = [
+ "objc2-encode",
+]
+
+[[package]]
 name = "objc2-encode"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -561,7 +570,7 @@ dependencies = [
  "bitflags",
  "block2",
  "libc",
- "objc2",
+ "objc2 0.5.2",
 ]
 
 [[package]]
